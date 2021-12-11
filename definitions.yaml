@@ -1,21 +1,166 @@
-MDP:
+POMDP:
+    name: "Partially Observable Markov Decision Process (POMDP)"
+    description: "A model of a combined environment-agent system which can be viewed as a random process where the agent only understands part of the environment"
     definitions:
-    statement: >
-          A \emph{Markov Decision Process} (MDP) is a 4-tuple
-          $$\langle \states, \actions, \transition, \reward\rangle$$, where:
-          \begin{itemize}
-          \item $\states$ is a finite set of \emph{states}.
-          \item $\actions$ is the (finite) set of \emph{actions} available for the
-            agent to take.
-          \item
-            $\transition\colon \states \times \actions \times \states \to
-            [0,1]$ is the \emph{transition function}. It has the property that
-            $\forall s\in \states, a\in \actions$, $\sum_{s'\in\states}
-            \transition(s, a, s') = 1$.
-          \item $\reward\colon \states \times \actions \times \states \to \R$ is the
-            \emph{reward function}.
-          \end{itemize}
-    explanation: >
+    latex_header: |
+        % sutton and barto header
+        % source http://incompleteideas.net/book/notation.sty
+        \usepackage{bm,bbm,amsmath,amsfonts,amssymb}
+        \usepackage{xspace}
+        \usepackage{eucal}
+
+        \def\defeq{\doteq}
+        \def\Re{\mathbb{R}}
+        \def\cross{\times}
+        \def\grad{\nabla}
+        \def\first#1#2{\frac{\partial #1}{\partial #2}}
+        \def\second#1#2{\frac{\partial^2 #1}{\partial #2^2}}
+        \def\p(#1|#2){p(#1\,|\,#2)}
+        \def\w{{\bf w}}
+        \def\x{{\bf x}}
+        \def\v{{\bf v}}
+        \def\z{{\bf z}}
+        \def\th{{\bm\theta}}
+        \newcommand{\EE}[2]{\mathbb{E}_{#1\!\!}\left[#2\right]}
+        \newcommand{\CEE}[3]{\EE{#1}{{#2}~\middle\vert~{#3}}}
+        \def\E#1{\EE{\,}{#1}}
+        \def\CE#1#2{\CEE{\,}{#1}{#2}}
+        \def\CP#1#2{\Pr{#1\mid#2}}
+        \def\Pr#1{{{\rm Pr\!}\left\{#1\right\}}}
+        \def\g{\mbox{$\gamma$}\xspace}
+        \def\a{\mbox{$\alpha$}\xspace}
+        \def\l{\mbox{$\lambda$}\xspace}
+        \def\e{\mbox{$\varepsilon$}\xspace}
+        \def\ee{\mbox{$\varepsilon$}\xspace}
+        \def\={\!=\!}
+        \def\X{{\cal X}}
+        \def\Y{{\cal Y}}
+        \def\A{{\cal A}}
+        \def\S{{\cal S}}
+        \def\P{{\cal P}}
+        \def\R{{\cal R}}
+        \def\O{{\cal O}}
+        \def\tr{^\top}
+        \def\simc{\!\sim\!}
+        \def\ind#1{{\mathbbm 1}_{#1}}
+        \def\la{($\lambda$)\xspace}
+        \def\vpi{v_\pi}
+        \def\vstar{v_*}
+        \def\qpi{q_\pi}
+        \def\qstar{q_*}
+        \newcommand{\norm}[1]{\left\Vert#1\right\Vert^2_{\mu}}
+        \newcommand{\size}[1]{\lvert#1\rvert}
+        \def\MSBEm{\overline{\text{BE}}}
+        \def\MSBE{$\overline{\text{BE}}$\xspace}
+        \def\MSPBEm{\overline{\text{PBE}}}
+        \def\MSPBE{$\overline{\text{PBE}}$\xspace}
+        \def\MSTDEm{\overline{\text{TDE}}}
+        \def\MSTDE{$\overline{\text{TDE}}$\xspace}
+        \def\MSREm{\overline{\text{RE}}}
+        \def\MSRE{$\overline{\text{RE}}$\xspace}
+        \def\MSVEm{\overline{\text{VE}}}
+        \def\MSVE{$\overline{\text{VE}}$\xspace}
+
+        % Nathan's header for the MALIP paper
+        % amsthm
+        \newtheorem{theorem}{Theorem}
+        \newtheorem{claim}{Claim}
+        \newtheorem{lemma}{Lemma}
+        \newtheorem{corollary}{Corollary}
+        \theoremstyle{definition}
+        \newtheorem{definition}{Definition}
+
+        % hyperref
+        \def\lemmaautorefname{Lemma}
+        \def\corollaryautorefname{Corollary}
+        \def\definitionautorefname{Definition}
+
+        \newcommand{\R}{\mathbb{R}}
+        \newcommand{\Na}{\mathbb{N}}
+        \newcommand{\Zi}{\mathbb{Z}}
+        \newcommand{\gauss}[2]{\Gamma_{#1,#2}}
+        \newcommand{\bern}[1][p]{B_{#1}}
+        \newcommand{\states}{\mathcal{S}}
+        \newcommand{\aN}{N}
+        \newcommand{\agentset}{[\aN]}
+        \newcommand{\actions}{\mathcal{A}}
+        \newcommand{\todo}[1]{\textcolor{red}{#1}}
+        \newcommand{\transition}{P}
+        \newcommand{\reward}{R}
+        \newcommand{\observations}{\Omega}
+        \newcommand{\obsfunc}{O}
+        \newcommand{\observation}{\omega}
+        \DeclarePairedDelimiter{\set}{\{}{\}}
+        \newcommand{\pol}{\pi}
+        \newcommand{\modelname}{Multi-Agent Informational Learning Process}
+        \newcommand{\modelabbr}{MAILP}
+        \newcommand{\coord}{\mathcal{C}}
+        \newcommand{\kval}{\mathcal{K}}
+        \newcommand{\info}{\mathcal{I}}
+        \newcommand{\learnfunc}{\Lambda}
+        \newcommand{\funcdef}[3]{#1\colon {#2 \to #3 }}
+
+        \usepackage{xcolor}
+        \newcommand{\npgnote}[1]{\textcolor{red}{\big[ #1 \big]}}
+    statement: |
+        A \emph{Partially-Observable Markov Decision Process} (POMDP) is a
+        6-tuple
+        $\langle \states, \actions, \transition, \reward, \observations,
+        \obsfunc\rangle$, where:
+        \begin{itemize}
+        \item $\states$ is the (finite) set of \emph{states}.
+        \item $\actions$ is the set of \emph{actions} available to the agent.
+        \item
+        $\transition\colon \states\times\actions\times\states \to [0,1]$
+        is the \emph{transition function}. It has the same property as in a
+        standard MDP, i.e.,
+        $\forall s\in\states, \forall a\in\actions, \sum_{s'\in\states}
+        P(s,a,s') = 1$.
+        \item $\reward\colon \states\times\actions\times\states \to\R$ is the \emph{reward
+          function}.
+        \item $\observations$ is the set of possible observations the agent
+        may perceive.
+        \item $\obsfunc\colon \actions\times\states\times\observations$ is
+        the \emph{observation function}. It has the property that
+        $\forall a\in\actions, s\in\states, \sum_{\observation\in
+          \observations}\obsfunc(a,s,\observation) = 1$.
+        \end{itemize}
+    explanation: |
+        The view of the POMDP is similar to that of the standard MDP: at each
+        time step $t$, the agent begins in state $s_{t}\in\states$ and selects
+        an action $a_{t}\in\actions$ to perform;
+        $\transition(s, a, s') = \Pr(s_{t+1}=s' \mid s_{t}=s, a_{t}=a)$
+        specifies the probability of transitioning into state $s'$ from state
+        $s$ when selecting action $a$; and $\reward(s,a, s')$ is the reward the
+        agent receives when selecting action $a$ in state $s$ and transitioning into state $s'$. However,
+        the agent does not see the full state $s_{t}$ at time $t$, but only
+        sees an observation $\observation_{t}\in\observations$. The
+        \emph{observation function}
+        $\obsfunc(a,s,\omega) = \Pr(\omega_{t+1}=\omega' \mid a_{t}=a,
+        s_{t+1}=s)$ specifies the probability that the agent sees observation
+        $\omega$ after selecting action $a$ and transitioning into the true
+        state $s$. At any point in time, the agent does not know the true
+        state, but instead can only compute a probability distribution on
+        possible states, called the \emph{belief distribution}, based on the
+        observations it has seen and the actions it has performed.
+
+        A policy $\pol\colon \observations \times \actions \to [0,1]$ gives a strategy
+        for the agent: given an observation $\observation\in \observations$, the policy
+        gives a probability distribution on actions $\pol(\observation, \cdot)$ (and
+        thus, it has the property that $\forall \observation\in\observations,
+        \sum_{a\in\actions} \pol(\observation,a) = 1)$) for the agent to take. The goal
+        of reinforcement learning is to learn an optimal (i.e., one which maximizes
+        expected reward) policy, denoted $\pol^{*}$.
+MDP:
+    name: "Markov Decision Process"
+    description: "The classical model of a combined environment-agent system which can be viewed as a random process and the agent has full view of the environment"
+    definitions:
+        - POMDP
+    statement: |
+        A \emph{Markov Decision Process} is a special case of the Partially
+        Observable Markov Decision Process except where the observation function
+        $\obsfunc$ is the identity function $\obsfunc(s) = s$
+    explanation: |
         According to this definition, the agent is in one of several
         possible states, given by $\states$, and performs one of the possible
         actions, given by $\actions$. When the agent is in state $s\in\states$
@@ -29,12 +174,23 @@ MDP:
         strategy for the agent to take that maximizes its expected
         reward.
 q_learning:
-    -
-q_function:
+    name: "Q Learning"
+    description: "The offline reinforcement learning algorithm"
     definitions:
         - MDP
-    statement:
-        - $$ Q(a,s) = Q(a^\prime,s^\prime) $$
-bellman_optimality:
+    latex_header: ""
+    statement: |
+        $$ Q^{new}(s_{t},a_{t})\leftarrow \underbrace {Q(s_{t},a_{t})} _{\text{old value}}+\underbrace {\alpha } _{\text{learning rate}}\cdot \overbrace {{\bigg (}\underbrace {\underbrace {r_{t}} _{\text{reward}}+\underbrace {\gamma } _{\text{discount factor}}\cdot \underbrace {\max _{a}Q(s_{t+1},a)} _{\text{estimate of optimal future value}}} _{\text{new value (temporal difference target)}}-\underbrace {Q(s_{t},a_{t})} _{\text{old value}}{\bigg )}} ^{\text{temporal difference}}$$
+q_function:
+    name: "Q Function"
+    description: "Action-Value function"
     definitions:
-        -
+        - MDP
+        - value_function
+    statement: $$ Q(a,s) = V(s^\prime) $$
+bellman_optimality:
+    name: "Bellman Optimality"
+    description: ""
+    definitions:
+        - q_function
+    statement: $$ Q(a,s) = r + \gamma \argmax_{a^\prime}(Q(a^\prime, s^\prime))$$

@@ -1,5 +1,10 @@
 q_learning_convergence:
+    name: "Q learning optimality"
+    description: "Q learning converges to optimal solution under complete state information"
     definitions:
         - q_learning
+        - bellman_optimality
     assumptions:
-        - 
+        - $$ P(s|\pi) \ne 0 \forall_{s\in S} $$
+    theorem:
+        
