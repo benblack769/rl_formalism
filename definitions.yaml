@@ -1,0 +1,40 @@
+MDP:
+    definitions:
+    statement: >
+          A \emph{Markov Decision Process} (MDP) is a 4-tuple
+          $$\langle \states, \actions, \transition, \reward\rangle$$, where:
+          \begin{itemize}
+          \item $\states$ is a finite set of \emph{states}.
+          \item $\actions$ is the (finite) set of \emph{actions} available for the
+            agent to take.
+          \item
+            $\transition\colon \states \times \actions \times \states \to
+            [0,1]$ is the \emph{transition function}. It has the property that
+            $\forall s\in \states, a\in \actions$, $\sum_{s'\in\states}
+            \transition(s, a, s') = 1$.
+          \item $\reward\colon \states \times \actions \times \states \to \R$ is the
+            \emph{reward function}.
+          \end{itemize}
+    explanation: >
+        According to this definition, the agent is in one of several
+        possible states, given by $\states$, and performs one of the possible
+        actions, given by $\actions$. When the agent is in state $s\in\states$
+        and takes action $a\in\actions$, the transition function
+        $\transition(s,a,s')$ gives the probability that the agent will
+        transition into state $s'\in\states$ (i.e., if $s_{t}$ and $a_{t}$
+        denote the state and action, respectively, at time $t$,
+        $\transition(s,a,s') = \Pr(s_{t+1}=s' \mid s_{t}=s, a_{t}=a)$), while
+        the reward function $\reward(s,a,s')$ specifies the agent's
+        \emph{reward}. Classical reinforcement learning aims to devise a
+        strategy for the agent to take that maximizes its expected
+        reward.
+q_learning:
+    -
+q_function:
+    definitions:
+        - MDP
+    statement:
+        - $$ Q(a,s) = Q(a^\prime,s^\prime) $$
+bellman_optimality:
+    definitions:
+        -
